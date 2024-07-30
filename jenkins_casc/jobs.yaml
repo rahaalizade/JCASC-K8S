@@ -1,0 +1,42 @@
+jobs:
+  - script: >
+      folder('Demo') {
+      }
+  - script: >
+      folder('Demo/First-app') {
+        views{
+            listView('jobs') {
+                description('All jobs for this project')
+                jobs {
+                    regex (/First.*/)
+                }
+                columns {
+                    status()
+                    weather()
+                    name()
+                    lastSuccess()
+                    lastFailure()
+                    lastDuration()
+                    buildButton()
+              }
+            }
+      }
+      }
+  - script: >
+        pipelineJob('Demo/First-app/First-app-Build-and-Deploy') {
+            definition {
+                cpsScm {
+                    scriptPath 'test'
+                    scm {
+                      git {
+                          remote {
+                          credentials 'kuber-user'
+                          url 'git@github.com:rahaalizade/JCASC-K8S.git' }
+                          branch 'main'
+                          extensions {}
+                      }
+                    }
+                }
+            }
+        }
+
