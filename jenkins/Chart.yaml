@@ -4,7 +4,7 @@ annotations:
     - Update CHANGELOG.md, README.md, and UPGRADING.md for linting
   artifacthub.io/images: |
     - name: jenkins
-      image: docker.io/jenkins/jenkins:2.452.3-jdk17
+      image: docker.io/jenkins/jenkins
     - name: k8s-sidecar
       image: docker.io/kiwigrid/k8s-sidecar:1.27.5
     - name: inbound-agent

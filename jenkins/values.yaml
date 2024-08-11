@@ -1,26 +1,15 @@
-# Default values for jenkins.
-# This is a YAML-formatted file.
-# Declare name/value pairs to be passed into your templates.
 # name: value
 
-## Overrides for generated resource names
-# See templates/_helpers.tpl
-# -- Override the resource name prefix
-# @default -- `Chart.Name`
-nameOverride:
+#nameOverride:
 # -- Override the full resource names
 # @default -- `jenkins-(release-name)` or `jenkins` if the release-name is `jenkins`
-fullnameOverride:
+#fullnameOverride:
 # -- Override the deployment namespace
 # @default -- `Release.Namespace`
-namespaceOverride:
+#namespaceOverride:
 
-# For FQDN resolving of the controller service. Change this value to match your existing configuration.
-# ref: https://github.com/kubernetes/dns/blob/master/docs/specification.md
-# -- Override the cluster name for FQDN resolving
 clusterZone: "cluster.local"
 
-# -- The URL of the Kubernetes API server
 kubernetesURL: "https://kubernetes.default"
 
 # -- The Jenkins credentials to access the Kubernetes API server. For the default cluster it is not needed.
@@ -30,22 +19,15 @@ credentialsId:
 renderHelmLabels: true
 
 controller:
-  # -- Used for label app.kubernetes.io/component
+
   componentName: "jenkins-controller"
   image:
-    # -- Controller image registry
-    registry: "docker.io"
-    # -- Controller image repository
+    registry: "artifactory.digikala.com/docker"
     repository: "jenkins/jenkins"
-
-    # -- Controller image tag override; i.e., tag: "2.440.1-jdk17"
-    tag:
-
-    # -- Controller image tag label
+    #tag: "2.361.2-centos7"
     tagLabel: jdk17
-    # -- Controller image pull policy
-    pullPolicy: "Always"
-  # -- Controller image pull secret
+    pullPolicy: "IfNotPresent"
+
   imagePullSecretName:
   # -- Lifecycle specification for controller-container
   lifecycle: {}
@@ -69,15 +51,9 @@ controller:
 
   hostNetworking: false
 
-  # When enabling LDAP or another non-Jenkins identity source, the built-in admin account will no longer exist.
-  # If you disable the non-Jenkins identity store and instead use the Jenkins internal one,
-  # you should revert controller.admin.username to your preferred admin user:
   admin:
 
-    # -- Admin username created as a secret if `controller.admin.createSecret` is true
     username: "admin"
-    # -- Admin password created as a secret if `controller.admin.createSecret` is true
-    # @default -- <random password>
     password: "adminpassword"
 
     # -- The key in the existing admin secret containing the username
@@ -86,22 +62,14 @@ controller:
     passwordKey: jenkins-admin-password
 
     # The default configuration uses this secret to configure an admin user
-    # If you don't need that user or use a different security realm, then you can disable it
-    # -- Create secret for admin user
     createSecret: true
 
-    # -- The name of an existing secret containing the admin credentials
-    existingSecret: ""
   # -- Email address for the administrator of the Jenkins instance
-  jenkinsAdminEmail:
+  # jenkinsAdminEmail:
 
-  # This value should not be changed unless you use your custom image of jenkins or any derived from.
-  # If you want to use Cloudbees Jenkins Distribution docker, you should set jenkinsHome: "/var/cloudbees-jenkins-distribution"
   # -- Custom Jenkins home path
   jenkinsHome: "/var/jenkins_home"
 
-  # This value should not be changed unless you use your custom image of jenkins or any derived from.
-  # If you want to use Cloudbees Jenkins Distribution docker, you should set jenkinsRef: "/usr/share/cloudbees-jenkins-distribution/ref"
   # -- Custom Jenkins reference path
   jenkinsRef: "/usr/share/jenkins/ref"
 
@@ -392,11 +360,11 @@ controller:
 
   # Plugins will be installed during Jenkins controller start
   # -- List of Jenkins plugins to install. If you don't want to install plugins, set it to `false`
-  installPlugins:
-    - kubernetes:4253.v7700d91739e5
-    - workflow-aggregator:600.vb_57cdd26fdd7
-    - git:5.2.2
+  installPlugins: 
     - configuration-as-code:1836.vccda_4a_122a_a_e
+    - kubernetes:4280.vd919fa_528c7e
+    - pipeline:600.vb_57cdd26fdd7
+    - git:5.3.0
 
   # If set to false, Jenkins will download the minimum required version of all dependencies.
   # -- Download the minimum required version or latest version of all dependencies
@@ -405,17 +373,18 @@ controller:
   # -- Set to true to download the latest version of any plugin that is requested to have the latest version
   installLatestSpecifiedPlugins: false
 
-  # -- List of plugins to install in addition to those listed in controller.installPlugins
   additionalPlugins: []
 
+
+  # -- List of plugins to install in addition to those listed in controller.installPlugins
   # Without this; whenever the controller gets restarted (Evicted, etc.) it will fetch plugin updates that have the potential to cause breakage.
   # Note that for this to work, `persistence.enabled` needs to be set to `true`
   # -- Initialize only on first installation. Ensures plugins do not get updated inadvertently. Requires `persistence.enabled` to be set to `true`
-  initializeOnce: false
+  initializeOnce: true
 
   # Enable to always override the installed plugins with the values of 'controller.installPlugins' on upgrade or redeployment.
   # -- Overwrite installed plugins on start
-  overwritePlugins: false
+  # overwritePlugins: false
 
   # Configures if plugins bundled with `controller.image` should be overwritten with the values of 'controller.installPlugins' on upgrade or redeployment.
   # -- Overwrite plugins that are already installed in the controller image
@@ -434,9 +403,23 @@ controller:
 
   # Used to approve a list of groovy functions in pipelines used the script-security plugin. Can be viewed under /scriptApproval
   # -- List of groovy functions to approve
-  scriptApproval: []
-  #  - "method groovy.json.JsonSlurperClassic parseText java.lang.String"
-  #  - "new groovy.json.JsonSlurperClassic"
+  scriptApproval: 
+      - "method hudson.model.Item getFullName"
+      - "method hudson.model.Item getName"
+      - "method hudson.model.ItemGroup getAllItems java.lang.Class"
+      - "method hudson.model.ItemGroup getItem java.lang.String"
+      - "method hudson.model.Job getLastSuccessfulBuild"
+      - "method hudson.model.Run getNumber"
+      - "method java.io.File delete"
+      - "method java.io.File exists"
+      - "method java.io.File mkdir"
+      - "method jenkins.model.Jenkins getItemByFullName java.lang.String"
+      - "method jenkins.model.Jenkins getItemByFullName java.lang.String java.lang.Class"
+      - "new java.io.File java.lang.String"
+      - "staticMethod jenkins.model.Jenkins getInstance"
+      - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getText java.io.File java.lang.String"
+      - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods write java.io.File java.lang.String"
+      - "staticMethod hudson.model.Hudson getInstance"
 
   # -- Map of groovy init scripts to be executed during Jenkins controller start
   initScripts: {}
@@ -485,6 +468,7 @@ controller:
 
   # -- Name of default cloud configuration.
   cloudName: "kubernetes"
+  skipTlsVerify: true
 
   # Below is the implementation of Jenkins Configuration as Code. Add a key under configScripts for each configuration area,
   # where each corresponds to a plugin or section of the UI. Each key (prior to | character) is just a label, and can be any value.
@@ -504,10 +488,10 @@ controller:
     configUrls: []
     # - https://acme.org/jenkins.yaml
     # -- List of Jenkins Config as Code scripts
-    configScripts: {}
-    #  welcome-message: |
-    #    jenkins:
-    #      systemMessage: Welcome to our CI\CD server. This Jenkins is configured and managed 'as code'.
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: Welcome to our CI\CD server.
 
     # Allows adding to the top-level security JCasC section. For legacy purposes, by default, the chart includes apiToken configurations
     # -- Jenkins Config as Code security-section
@@ -554,7 +538,7 @@ controller:
       enabled: true
       image:
         # -- Registry for the image that triggers the reload
-        registry: docker.io
+        registry: "docker.io"
         # -- Repository of the image that triggers the reload
         repository: kiwigrid/k8s-sidecar
         # -- Tag for the image that triggers the reload
@@ -931,7 +915,7 @@ agent:
   jnlpregistry:
   image:
     # -- Repository to pull the agent jnlp image from
-    repository: "jenkins/inbound-agent"
+    repository: "artifactory.digikala.com/docker/jenkins/inbound-agent"
     # -- Tag of the image to pull
     tag: "3256.v88a_f6e922152-1"
   # -- Configure working directory for default agent
