@@ -179,8 +179,8 @@ controller:
   # For minikube, set this to NodePort, elsewhere uses LoadBalancer
   # Use ClusterIP if your setup includes ingress controller
   # -- k8s service type
-  serviceType: ClusterIP
-
+  serviceType: NodePort
+  nodePort: 30013
   # -- k8s service clusterIP. Only used if serviceType is ClusterIP
   clusterIp:
   # -- k8s service port
@@ -188,7 +188,6 @@ controller:
   # -- k8s target port
   targetPort: 8080
   # -- k8s node port. Only used if serviceType is NodePort
-  nodePort:
 
   # Use Local to preserve the client source IP and avoids a second hop for LoadBalancer and NodePort type services,
   # but risks potentially imbalanced traffic spreading.
@@ -491,7 +490,41 @@ controller:
     configScripts:
       welcome-message: |
         jenkins:
-          systemMessage: Welcome to our CI\CD server.
+          systemMessage: Hi AssHole
+      kubernetes-agents: |
+        jenkins:
+          clouds:
+            - kubernetes:
+                name: "kubernetes"
+                namespace: "default"
+                serverUrl: "https://192.168.49.2:8443"
+                jenkinsUrl: "http://192.168.49.2:30013"
+                containerCapStr: "10"
+                templates:
+                  - name: "jenkins-agent"
+                    label: "kubernetes"
+                    serviceAccount: "default"
+                    nodeUsageMode: "EXCLUSIVE"
+                    containers:
+                      - name: "jnlp"
+                        image: "jenkins/inbound-agent:latest-jdk17"
+                        ttyEnabled: true
+                        workingDir: "/home/jenkins/agent"
+                    yaml: |
+                      apiVersion: v1
+                      kind: Pod
+                      spec:
+                        containers:
+                          - name: jnlp
+                            image: jenkins/inbound-agent:4.10-3
+                            imagePullPolicy: Always
+                            resources:
+                              requests:
+                                cpu: "100m"
+                                memory: "256Mi"
+                              limits:
+                                cpu: "500m"
+                                memory: "512Mi"
 
     # Allows adding to the top-level security JCasC section. For legacy purposes, by default, the chart includes apiToken configurations
     # -- Jenkins Config as Code security-section
@@ -885,6 +918,22 @@ controller:
 #        hYAzODo1Jt59pcqqKJEas0C/lFJEB3frw4ImNx5fNlJYOpx+ijfQs9m39CevDq0=
 
 agent:
+  # podTemplates:
+  #   python: |
+  #     - name: python
+  #       label: jenkins-python
+  #       serviceAccount: jenkins
+  #       containers:
+  #         - name: python
+  #           image: python:3
+  #           command: "/bin/sh -c"
+  #           args: "cat"
+  #           ttyEnabled: true
+  #           privileged: true
+  #           resourceRequestCpu: "400m"
+  #           resourceRequestMemory: "512Mi"
+  #           resourceLimitCpu: "1"
+  #           resourceLimitMemory: "1024Mi"
   # -- Enable Kubernetes plugin jnlp-agent podTemplate
   enabled: true
   # -- The name of the pod template to use for providing default values
